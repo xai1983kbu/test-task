@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ParameterUserPoolArn:
+    Type: String
+Resources:
+  BestStarWarsPersonsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      # ProvisionedThroughput:
+      #   ReadCapacityUnits: 5
+      #   WriteCapacityUnits: 5
+      BillingMode: PAY_PER_REQUEST
+
+  BestStarWarsPersonsAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors: "'*'"
+      # Auth:
+      #   DefaultAuthorizer: ApiCognitoAuthorizer
+      #   Authorizers:
+      #     ApiCognitoAuthorizer:
+      #       UserPoolArn: !Sub "${ParameterUserPoolArn}"
+      #       # UserPoolArn: !GetAtt MyCognitoUserPool.Arn
+
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Handler: lambda.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BestStarWarsPersonsTable
+      Policies:
+        # Give just CRUD permissions to DynamoDB table
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BestStarWarsPersonsTable
+      Events:
+        AddPerson:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users
+            Method: POST
+        GetPerson:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users
+            Method: GET
+        UpdatePerson:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users/{id}
+            Method: ANY
+
+  # MyCognitoUserPool:
+  #   Type: AWS::Cognito::UserPool
+  #   Properties:
+  #     # UserPoolName: !Ref CognitoUserPoolName
+  #     UserPoolName: "BestStarWarsPersons-userpool"
+  #     Policies:
+  #       PasswordPolicy:
+  #         MinimumLength: 8
+  #     UsernameAttributes:
+  #       - email
+  #     Schema:
+  #       - AttributeDataType: String
+  #         Name: email
+  #         Required: false
+
+  # MyCognitoUserPoolClient:
+  #   Type: AWS::Cognito::UserPoolClient
+  #   Properties:
+  #     UserPoolId: !Ref MyCognitoUserPool
+  #     # ClientName: !Ref CognitoUserPoolClientName
+  #     ClientName: "BestStarWarsPersons-userpool-client"
+  #     GenerateSecret: false
