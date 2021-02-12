@@ -22,7 +22,17 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      Cors: '''*'''
+      Cors:
+        AllowMethods: '''*'''
+        AllowHeaders: '''*'''
+        AllowOrigin: '''*'''
+      Auth:
+        DefaultAuthorizer: ApiCognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          ApiCognitoAuthorizer:
+            UserPoolArn:
+              Fn::Sub: ${ParameterUserPoolArn}
   MyFunction:
     Type: AWS::Serverless::Function
     Properties:

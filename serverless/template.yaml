@@ -26,13 +26,17 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      Cors: "'*'"
-      # Auth:
-      #   DefaultAuthorizer: ApiCognitoAuthorizer
-      #   Authorizers:
-      #     ApiCognitoAuthorizer:
-      #       UserPoolArn: !Sub "${ParameterUserPoolArn}"
-      #       # UserPoolArn: !GetAtt MyCognitoUserPool.Arn
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: ApiCognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: False
+        Authorizers:
+          ApiCognitoAuthorizer:
+            UserPoolArn: !Sub "${ParameterUserPoolArn}"
+            # UserPoolArn: !GetAtt MyCognitoUserPool.Arn
 
   MyFunction:
     Type: AWS::Serverless::Function
