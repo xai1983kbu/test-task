@@ -32,7 +32,9 @@ Resources:
         Authorizers:
           ApiCognitoAuthorizer:
             UserPoolArn:
-              Fn::Sub: ${ParameterUserPoolArn}
+              Fn::GetAtt:
+              - MyCognitoUserPool
+              - Arn
   MyFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -69,3 +71,39 @@ Resources:
               Ref: BestStarWarsPersonsAPI
             Path: /users/{id}
             Method: ANY
+  MyCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AliasAttributes:
+      - email
+      AutoVerifiedAttributes:
+      - email
+      UserPoolName: BestStarWarsPersons-userpool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+  MyCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: MyCognitoUserPool
+      ClientName: BestStarWarsPersons-userpool-client
+      GenerateSecret: false
+      RefreshTokenValidity: 30
+Outputs:
+  Region:
+    Description: Region
+    Value:
+      Ref: AWS::Region
+  ApiUrl:
+    Description: API endpoint URL for Prod environment
+    Value:
+      Fn::Sub: https://${BestStarWarsPersonsAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  CognitoUserPoolId:
+    Description: Cognito User Pool Id
+    Value:
+      Ref: MyCognitoUserPool
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool Client Id
+    Value:
+      Ref: MyCognitoUserPoolClient
