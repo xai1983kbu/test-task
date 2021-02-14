@@ -1,8 +1,8 @@
 import "./App.css";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import TestTask from "./pages/TestTask";
-import Home from "./pages/Home";
-import About from "./pages/About";
+import TestTask from "./pages/testTask";
+import Home from "./pages/home";
+import About from "./pages/about";
 import Amplify from "aws-amplify";
 import awsconfig from "./aws-exports";
 import { AmplifySignOut, withAuthenticator } from "@aws-amplify/ui-react";
