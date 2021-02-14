@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Box,
   Typography,
   TextField,
   Button,
@@ -13,20 +14,15 @@ import { useForm, Controller } from "react-hook-form";
 import { ErrorMessage } from "@hookform/error-message";
 
 export default function CreateNewUser({ createUser, usersTakenIds }) {
-  const {
-    getValues,
-    errors,
-    handleSubmit,
-    control,
-    setError,
-    trigger,
-    formState: { isSubmitting, isValid },
-  } = useForm({ mode: "onSubmit" });
+  const { errors, handleSubmit, control, reset } = useForm({
+    mode: "onSubmit",
+  });
 
   const onSubmit = async (data) => {
     try {
       const { bestStarWarsPersonId, username } = data;
       await createUser(bestStarWarsPersonId.toString(), username);
+      reset();
     } catch (error) {
       console.log(error);
     }
@@ -35,7 +31,7 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
   return (
     <div>
       <Typography variant="h6" gutterBottom>
-        Створити Нового користувача
+        Create a New User
       </Typography>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div>
@@ -44,7 +40,7 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
             error={Boolean(errors.wordlevel)}
           >
             <InputLabel id="demo-simple-select-label">
-              Вибір id героя
+              Choose id Person from StarWars api
             </InputLabel>
 
             <Controller
@@ -61,7 +57,7 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
                 </Select>
               }
               name="bestStarWarsPersonId"
-              rules={{ required: "Це поле обов'язкове" }}
+              rules={{ required: "This field is required!" }}
               control={control}
               defaultValue=""
             />
@@ -69,13 +65,14 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
               {errors.bestStarWarsPerson && errors.bestStarWarsPerson.message}
             </FormHelperText>
           </FormControl>
+          <Box component="div" m={2} />
           <Controller
             as={
               <TextField
                 fullWidth
                 margin="none"
                 id="outlined-username-input"
-                label="Ім'я користувача"
+                label="Name of user"
                 type="text"
                 variant="outlined"
                 error={!!errors?.username}
@@ -86,14 +83,13 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
             name="username"
             defaultValue=""
             rules={{
-              required: "Це поле обов'язкове",
+              required: "This field is required!",
               minLength: {
                 value: 3,
-                message: "Ім'я користувача повинно містити мінімум 3 символів",
+                message: "User's name must contain min 3 charachters",
               },
             }}
           />
-
           <Button
             id="create"
             type="submit"
@@ -101,10 +97,8 @@ export default function CreateNewUser({ createUser, usersTakenIds }) {
             size="large"
             variant="contained"
             color="primary"
-            // disabled={isSubmitting || !isValid}
-            //   className={classes.buttonText}
           >
-            Створити користувача
+            Create User
           </Button>
         </div>
       </form>
