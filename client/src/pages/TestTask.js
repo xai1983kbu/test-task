@@ -96,6 +96,31 @@ function TestTask() {
       // setError(error);
     }
   }
+  async function updateUser(formData) {
+    // console.log(formData);
+    const id = formData.bestStarWarsPersonId;
+    const apiName = "StarWarsAPI";
+    const path = `/users/${id}`;
+    const myInit = {
+      body: {
+        name: formData.name,
+        data: formData.person,
+      },
+      headers: {},
+    };
+    try {
+      const updatedUser = await API.put(apiName, path, myInit);
+      //   console.log(updatedUser);
+      setUsers((prevValue) =>
+        prevValue.map((user) =>
+          user.id === updatedUser.id ? updatedUser : user
+        )
+      );
+    } catch (error) {
+      console.log(error);
+      setError(error);
+    }
+  }
   return (
     <div className="App">
       <Container maxWidth="xs" style={{ textAlign: "center" }}>
