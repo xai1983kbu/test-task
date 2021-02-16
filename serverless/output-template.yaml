@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Layers:
+    - Ref: UtilsLayer
 Parameters:
   ParameterUserPoolArn:
     Type: String
@@ -35,11 +39,51 @@ Resources:
               Fn::GetAtt:
               - MyCognitoUserPool
               - Arn
-  MyFunction:
+  ExternalDepsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: s3://test-task-best-star-wars-persons/ebb5efa28853407d111f1b4787a1cc2c
+      Description: Layer for create-user handler. It contains axios package.
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs10.x
+  UtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: s3://test-task-best-star-wars-persons/7b294e1abb32b6a9df2b01063ba30907
+      Description: Layer for all handlers.
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs10.x
+  createUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://test-task-best-star-wars-persons/a4787e6a1e6405ef19bb373fb6719944
-      Handler: lambda.handler
+      CodeUri: s3://test-task-best-star-wars-persons/630db7203644b56a910538edaf044d4e
+      Handler: create-user.handler
+      Runtime: nodejs10.x
+      Layers:
+      - Ref: ExternalDepsLayer
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: BestStarWarsPersonsTable
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: BestStarWarsPersonsTable
+      Events:
+        AddUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: BestStarWarsPersonsAPI
+            Path: /users
+            Method: POST
+  getUserByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://test-task-best-star-wars-persons/75e18c89c7a10bbd06ed7444cc0c135e
+      Handler: get-user-by-id.handler
       Runtime: nodejs10.x
       Environment:
         Variables:
@@ -50,27 +94,79 @@ Resources:
           TableName:
             Ref: BestStarWarsPersonsTable
       Events:
-        AddPerson:
+        GetUser:
           Type: Api
           Properties:
             RestApiId:
               Ref: BestStarWarsPersonsAPI
-            Path: /users
-            Method: POST
-        GetPerson:
+            Path: /users/{id}
+            Method: GET
+  getAllUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://test-task-best-star-wars-persons/010c48e5ddfa479712ca4b2aa2ee194c
+      Handler: get-all-users.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: BestStarWarsPersonsTable
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: BestStarWarsPersonsTable
+      Events:
+        GetAllUsers:
           Type: Api
           Properties:
             RestApiId:
               Ref: BestStarWarsPersonsAPI
             Path: /users
             Method: GET
-        UpdatePerson:
+  updateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://test-task-best-star-wars-persons/77710a840fcd8e0915170e64d03ce437
+      Handler: update-user.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: BestStarWarsPersonsTable
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: BestStarWarsPersonsTable
+      Events:
+        UpdateUser:
           Type: Api
           Properties:
             RestApiId:
               Ref: BestStarWarsPersonsAPI
             Path: /users/{id}
-            Method: ANY
+            Method: PUT
+  deleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://test-task-best-star-wars-persons/13d70c942888424cc6a3a5894d40e76b
+      Handler: delete-user.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: BestStarWarsPersonsTable
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: BestStarWarsPersonsTable
+      Events:
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: BestStarWarsPersonsAPI
+            Path: /users/{id}
+            Method: DELETE
   MyCognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:

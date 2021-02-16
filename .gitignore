@@ -3,3 +3,5 @@ lambdaFunctionCodeFlow.drawio
 img/.DS_Store
 .DS_Store
 /client/node_modules
+/serverless/src/externalDepsLayer/nodejs/node_modules
+/serverless/src/utilsLayer/nodejs/node_modules

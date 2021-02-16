@@ -1,8 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Layers:
+      - !Ref UtilsLayer
+
 Parameters:
   ParameterUserPoolArn:
     Type: String
+
 Resources:
   BestStarWarsPersonsTable:
     Type: AWS::DynamoDB::Table
@@ -38,11 +45,54 @@ Resources:
             # UserPoolArn: !Sub "${ParameterUserPoolArn}"
             UserPoolArn: !GetAtt MyCognitoUserPool.Arn
 
-  MyFunction:
+  ExternalDepsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./src/externalDepsLayer
+      Description: Layer for create-user handler. It contains axios package.
+      # delete old version of layer
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs10.x
+
+  UtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./src/utilsLayer
+      Description: Layer for all handlers.
+      # delete old version of layer
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs10.x
+
+  createUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./src
-      Handler: lambda.handler
+      CodeUri: ./src/handlers/create-user
+      Handler: create-user.handler
+      Runtime: nodejs10.x
+      Layers:
+        - !Ref ExternalDepsLayer
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BestStarWarsPersonsTable
+      Policies:
+        # Give just CRUD permissions to DynamoDB table
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BestStarWarsPersonsTable
+      Events:
+        AddUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users
+            Method: POST
+
+  getUserByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/get-user-by-id
+      Handler: get-user-by-id.handler
       Runtime: nodejs10.x
       Environment:
         Variables:
@@ -52,24 +102,76 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BestStarWarsPersonsTable
       Events:
-        AddPerson:
-          Type: Api
-          Properties:
-            RestApiId: !Ref BestStarWarsPersonsAPI
-            Path: /users
-            Method: POST
-        GetPerson:
-          Type: Api
-          Properties:
-            RestApiId: !Ref BestStarWarsPersonsAPI
-            Path: /users
-            Method: GET
-        UpdatePerson:
+        GetUser:
           Type: Api
           Properties:
             RestApiId: !Ref BestStarWarsPersonsAPI
             Path: /users/{id}
-            Method: ANY
+            Method: GET
+
+  getAllUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/get-all-users
+      Handler: get-all-users.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BestStarWarsPersonsTable
+      Policies:
+        # Give just CRUD permissions to DynamoDB table
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BestStarWarsPersonsTable
+      Events:
+        GetAllUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            # without "/" !
+            Path: /users
+            Method: GET
+
+  updateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/update-user
+      Handler: update-user.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BestStarWarsPersonsTable
+      Policies:
+        # Give just CRUD permissions to DynamoDB table
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BestStarWarsPersonsTable
+      Events:
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users/{id}
+            Method: PUT
+
+  deleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/handlers/delete-user
+      Handler: delete-user.handler
+      Runtime: nodejs10.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BestStarWarsPersonsTable
+      Policies:
+        # Give just CRUD permissions to DynamoDB table
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BestStarWarsPersonsTable
+      Events:
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BestStarWarsPersonsAPI
+            Path: /users/{id}
+            Method: DELETE
 
   MyCognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -78,38 +180,32 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
-      UserPoolName: "BestStarWarsPersons-userpool"
+      UserPoolName: 'BestStarWarsPersons-userpool'
       Policies:
         PasswordPolicy:
           MinimumLength: 8
-      # UsernameAttributes:
-      #   - email
-      # Schema:
-      #   - AttributeDataType: String
-      #     Name: email
-      #     Required: false
 
   MyCognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref MyCognitoUserPool
-      ClientName: "BestStarWarsPersons-userpool-client"
+      ClientName: 'BestStarWarsPersons-userpool-client'
       GenerateSecret: false
       RefreshTokenValidity: 30
 
 Outputs:
   Region:
-      Description: "Region"
-      Value: !Ref AWS::Region
+    Description: 'Region'
+    Value: !Ref AWS::Region
 
   ApiUrl:
-    Description: "API endpoint URL for Prod environment"
+    Description: 'API endpoint URL for Prod environment'
     Value: !Sub 'https://${BestStarWarsPersonsAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/'
 
   CognitoUserPoolId:
-    Description: "Cognito User Pool Id"
+    Description: 'Cognito User Pool Id'
     Value: !Ref MyCognitoUserPool
 
   CognitoUserPoolClientId:
-    Description: "Cognito User Pool Client Id"
+    Description: 'Cognito User Pool Client Id'
     Value: !Ref MyCognitoUserPoolClient

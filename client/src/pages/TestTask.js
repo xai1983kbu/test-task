@@ -26,7 +26,7 @@ function TestTask() {
         setUsers(starWarsUsers);
       } catch (error) {
         console.log(error);
-        setError(error.message);
+        // setError(error.message);
       }
     }
     setIsLoading(true);
@@ -51,7 +51,7 @@ function TestTask() {
       setUsers((prevValue) => [...prevValue, user]);
     } catch (error) {
       console.log(error);
-      setError(error);
+      // setError(error);
     }
   }
   async function deleteUser(user) {
@@ -68,7 +68,7 @@ function TestTask() {
       setUsers(users.filter((user) => user.bestStarWarsPersonId !== id));
     } catch (error) {
       console.log(error);
-      setError(error);
+      // setError(error);
     }
   }
   async function updateUser(formData) {
@@ -93,7 +93,7 @@ function TestTask() {
       );
     } catch (error) {
       console.log(error);
-      setError(error);
+      // setError(error);
     }
   }
   return (
@@ -125,10 +125,10 @@ function TestTask() {
             updateUser={updateUser}
           />
         ) : (
-          <Typography variant="h6" gutterBottom>
-            There aren't users yet.
-          </Typography>
-        )}
+            <Typography variant="h6" gutterBottom>
+              There aren't users yet.
+            </Typography>
+          )}
       </Container>
     </div>
   );
